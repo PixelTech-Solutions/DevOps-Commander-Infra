@@ -1,0 +1,21 @@
+name: "Provision DevOps-Commander (Azure)"
+
+# Reuses the same reusable Terraform workflow as ERP_Infra.
+# Single environment (prod) — the Function App is shared across all ERP environments.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  prod:
+    uses: PixelTech-Solutions/Terraform/.github/workflows/terraform.yml@main
+    with:
+      working_directory: ./infra/azure
+      environment: prod
+      project_name: devops-commander
+      service_name: alert-receiver
+    secrets: inherit
