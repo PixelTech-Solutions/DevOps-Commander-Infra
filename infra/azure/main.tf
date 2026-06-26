@@ -139,6 +139,10 @@ resource "azurerm_linux_function_app" "this" {
     # connection (created once in the portal) that fronts the Search service.
     AZURE_AI_SEARCH_INDEX         = local.search_index_name
     AZURE_AI_SEARCH_CONNECTION_ID = local.search_connection_id
+
+    # Action executor (ChatOps): the subscription that holds the dev ERP VMs the
+    # executor reaches via Run Command. The executor stays disabled without it.
+    AZURE_SUBSCRIPTION_ID = data.azurerm_subscription.current.subscription_id
   }
 
   lifecycle {
@@ -175,6 +179,39 @@ resource "azurerm_role_assignment" "func_openai_user" {
 resource "azurerm_role_assignment" "func_foundry_user" {
   scope              = data.azurerm_cognitive_account.foundry.id
   role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d"
+  principal_id       = azurerm_user_assigned_identity.func.principal_id
+}
+
+# ===========================================================================
+# Action executor (ChatOps) — let the Function identity run allow-listed
+# commands on the *development* ERP VMs only, via Azure Run Command. A custom
+# role keeps this least-privilege (just read + runCommand, not full VM
+# Contributor), and both the role and its assignment are scoped to the dev
+# resource group, so the production VMs are physically out of reach.
+# ===========================================================================
+data "azurerm_resource_group" "erp_dev" {
+  name = "rg-erp-dev"
+}
+
+resource "azurerm_role_definition" "vm_run_command_dev" {
+  name        = "DevOps Commander Run Command (dev)"
+  scope       = data.azurerm_resource_group.erp_dev.id
+  description = "Invoke Azure Run Command on dev ERP VMs only. Used by the DevOps Commander Function identity."
+
+  permissions {
+    actions = [
+      "Microsoft.Compute/virtualMachines/read",
+      "Microsoft.Compute/virtualMachines/runCommand/action",
+    ]
+    not_actions = []
+  }
+
+  assignable_scopes = [data.azurerm_resource_group.erp_dev.id]
+}
+
+resource "azurerm_role_assignment" "func_run_command_dev" {
+  scope              = data.azurerm_resource_group.erp_dev.id
+  role_definition_id = azurerm_role_definition.vm_run_command_dev.role_definition_resource_id
   principal_id       = azurerm_user_assigned_identity.func.principal_id
 }
 
