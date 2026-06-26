@@ -125,13 +125,14 @@ resource "azurerm_linux_function_app" "this" {
     ENABLE_ORYX_BUILD              = "false"
     ALERT_SHARED_SECRET            = random_password.alert_secret.result
 
-    # Azure OpenAI (keyless — auth via the user-assigned identity above).
-    # Endpoint is the new OpenAI v1 surface exposed by the Foundry resource.
+    # Azure AI Foundry Agent Service (keyless — auth via the user-assigned
+    # identity above, granted the Foundry User role on the Foundry resource).
+    # The agent SDK (azure-ai-projects) talks to the project endpoint;
     # AZURE_CLIENT_ID tells DefaultAzureCredential which identity to use.
-    AZURE_CLIENT_ID          = azurerm_user_assigned_identity.func.client_id
-    AZURE_OPENAI_ENDPOINT    = "https://${var.foundry_resource_name}.services.ai.azure.com/openai/v1"
-    AZURE_OPENAI_DEPLOYMENT  = var.gpt_deployment_name
-    AZURE_OPENAI_API_VERSION = var.gpt_api_version
+    # AZURE_OPENAI_DEPLOYMENT is the model the agent runs (gpt-4o).
+    AZURE_CLIENT_ID           = azurerm_user_assigned_identity.func.client_id
+    AZURE_AI_PROJECT_ENDPOINT = "https://${var.foundry_resource_name}.services.ai.azure.com/api/projects/${var.foundry_project_name}"
+    AZURE_OPENAI_DEPLOYMENT   = var.gpt_deployment_name
   }
 
   lifecycle {
@@ -152,9 +153,22 @@ data "azurerm_cognitive_account" "foundry" {
   resource_group_name = var.foundry_resource_group
 }
 
+data "azurerm_subscription" "current" {}
+
 resource "azurerm_role_assignment" "func_openai_user" {
   scope                = data.azurerm_cognitive_account.foundry.id
   role_definition_name = "Cognitive Services OpenAI User"
   principal_id         = azurerm_user_assigned_identity.func.principal_id
+}
+
+# Foundry Agent Service data-plane access (create agents, run threads) for the
+# Function's managed identity. Microsoft docs are explicit that "Cognitive
+# Services OpenAI User" / "Azure AI Developer" are NOT sufficient for the Agent
+# Service — the identity needs the Foundry User role. Referenced by its stable
+# role-definition GUID because the role was recently renamed (was Azure AI User).
+resource "azurerm_role_assignment" "func_foundry_user" {
+  scope              = data.azurerm_cognitive_account.foundry.id
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d"
+  principal_id       = azurerm_user_assigned_identity.func.principal_id
 }
 

@@ -33,6 +33,12 @@ variable "foundry_resource_name" {
   default     = "devops-commanderv1"
 }
 
+variable "foundry_project_name" {
+  type        = string
+  description = "Name of the Foundry project that hosts the agents (ai.azure.com)"
+  default     = "devops-commander"
+}
+
 variable "foundry_resource_group" {
   type        = string
   description = "Resource group that contains the Foundry resource. Defaults to this stack's RG; override in tfvars if the portal placed it elsewhere."
