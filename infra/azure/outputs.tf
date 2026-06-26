@@ -36,18 +36,18 @@ output "function_app_principal_id" {
 }
 
 # ---------------------------------------------------------------------------
-# Azure AI Search (RAG, Step 8). The Foundry project connection is created by
-# Terraform (azapi_resource.search_connection), so no portal step is needed.
-# These outputs are used by the seed script to push records and create the
-# blob indexers over the Search REST API.
+# Azure AI Search (RAG, Step 8). Use these to create the Foundry project
+# connection ONCE in the portal: Management center > Connected resources >
+# New connection > Azure AI Search > Enter manually > API key. The connection
+# NAME must be exactly `search_connection_name` below.
 # ---------------------------------------------------------------------------
 output "search_endpoint" {
-  description = "Azure AI Search endpoint — used by the seed script (and the Foundry connection)."
+  description = "Azure AI Search endpoint — paste into the Foundry connection."
   value       = "https://${azurerm_search_service.incidents.name}.search.windows.net"
 }
 
 output "search_admin_key" {
-  description = "Admin key for the Search service — used by the seed script (API key auth)."
+  description = "Admin key for the Search service — paste into the Foundry connection (API key auth)."
   value       = azurerm_search_service.incidents.primary_key
   sensitive   = true
 }
@@ -58,7 +58,7 @@ output "search_index_name" {
 }
 
 output "search_connection_name" {
-  description = "Foundry project connection name (Terraform-managed; equals the index name)."
+  description = "Name the Foundry project connection MUST use (must match the index name)."
   value       = local.search_connection_name
 }
 
