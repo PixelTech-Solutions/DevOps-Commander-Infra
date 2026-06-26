@@ -133,6 +133,12 @@ resource "azurerm_linux_function_app" "this" {
     AZURE_CLIENT_ID           = azurerm_user_assigned_identity.func.client_id
     AZURE_AI_PROJECT_ENDPOINT = "https://${var.foundry_resource_name}.services.ai.azure.com/api/projects/${var.foundry_project_name}"
     AZURE_OPENAI_DEPLOYMENT   = var.gpt_deployment_name
+
+    # RAG (Step 8): the diagnosis agent attaches the Azure AI Search knowledge
+    # tool when these are present. CONNECTION_ID points at the Foundry project
+    # connection (created once in the portal) that fronts the Search service.
+    AZURE_AI_SEARCH_INDEX         = local.search_index_name
+    AZURE_AI_SEARCH_CONNECTION_ID = local.search_connection_id
   }
 
   lifecycle {

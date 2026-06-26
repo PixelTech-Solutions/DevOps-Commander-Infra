@@ -4,6 +4,14 @@ locals {
   # Storage / Function App names cannot contain hyphens and are length-limited.
   short_name = replace(local.name_prefix, "-", "")
 
+  # RAG knowledge base (Step 8). Holds past incidents, the infrastructure
+  # inventory (with IPs), and implementation history. The Foundry project
+  # connection MUST be named exactly this (created once in the portal). The
+  # agent tool references the connection by its full resource id (deterministic).
+  search_index_name      = "erp-knowledge"
+  search_connection_name = "erp-knowledge"
+  search_connection_id   = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.foundry_resource_group}/providers/Microsoft.CognitiveServices/accounts/${var.foundry_resource_name}/projects/${var.foundry_project_name}/connections/${local.search_connection_name}"
+
   common_tags = {
     Environment = var.environment
     Project     = var.project_name
