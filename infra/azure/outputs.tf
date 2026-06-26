@@ -31,6 +31,6 @@ output "alert_shared_secret" {
 }
 
 output "function_app_principal_id" {
-  description = "System-assigned managed identity of the Function App (granted Cognitive Services OpenAI User on the Foundry resource)."
-  value       = one(azurerm_linux_function_app.this.identity[*].principal_id)
+  description = "User-assigned managed identity of the Function App (granted Cognitive Services OpenAI User on the Foundry resource)."
+  value       = azurerm_user_assigned_identity.func.principal_id
 }

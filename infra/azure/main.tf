@@ -70,6 +70,16 @@ resource "azurerm_service_plan" "this" {
   tags                = local.common_tags
 }
 
+# User-assigned managed identity for the Function App. Used as a separate
+# resource (instead of inline system-assigned) so principal_id is known at
+# plan time and propagates cleanly into the role assignment below.
+resource "azurerm_user_assigned_identity" "func" {
+  name                = "id-${local.name_prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  tags                = local.common_tags
+}
+
 resource "azurerm_linux_function_app" "this" {
   name                       = "func-${local.name_prefix}-${random_string.suffix.result}"
   location                   = azurerm_resource_group.this.location
@@ -80,10 +90,11 @@ resource "azurerm_linux_function_app" "this" {
   https_only                 = true
   tags                       = local.common_tags
 
-  # System-assigned managed identity — used for keyless auth to Azure OpenAI
-  # (Cognitive Services OpenAI User role granted below). No API key stored.
+  # Keyless auth to Azure OpenAI via the user-assigned identity above
+  # (granted Cognitive Services OpenAI User on the Foundry resource). No API key.
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.func.id]
   }
 
   site_config {
@@ -108,8 +119,10 @@ resource "azurerm_linux_function_app" "this" {
     ENABLE_ORYX_BUILD              = "true"
     ALERT_SHARED_SECRET            = random_password.alert_secret.result
 
-    # Azure OpenAI (keyless — auth via the system-assigned identity above).
+    # Azure OpenAI (keyless — auth via the user-assigned identity above).
     # Endpoint is the new OpenAI v1 surface exposed by the Foundry resource.
+    # AZURE_CLIENT_ID tells DefaultAzureCredential which identity to use.
+    AZURE_CLIENT_ID          = azurerm_user_assigned_identity.func.client_id
     AZURE_OPENAI_ENDPOINT    = "https://${var.foundry_resource_name}.services.ai.azure.com/openai/v1"
     AZURE_OPENAI_DEPLOYMENT  = var.gpt_deployment_name
     AZURE_OPENAI_API_VERSION = var.gpt_api_version
@@ -136,6 +149,6 @@ data "azurerm_cognitive_account" "foundry" {
 resource "azurerm_role_assignment" "func_openai_user" {
   scope                = data.azurerm_cognitive_account.foundry.id
   role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = one(azurerm_linux_function_app.this.identity[*].principal_id)
+  principal_id         = azurerm_user_assigned_identity.func.principal_id
 }
 
