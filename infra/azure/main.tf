@@ -80,6 +80,12 @@ resource "azurerm_linux_function_app" "this" {
   https_only                 = true
   tags                       = local.common_tags
 
+  # System-assigned managed identity — used for keyless auth to Azure OpenAI
+  # (Cognitive Services OpenAI User role granted below). No API key stored.
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
     application_insights_connection_string = azurerm_application_insights.this.connection_string
     application_insights_key               = azurerm_application_insights.this.instrumentation_key
@@ -101,6 +107,12 @@ resource "azurerm_linux_function_app" "this" {
     SCM_DO_BUILD_DURING_DEPLOYMENT = "true"
     ENABLE_ORYX_BUILD              = "true"
     ALERT_SHARED_SECRET            = random_password.alert_secret.result
+
+    # Azure OpenAI (keyless — auth via the system-assigned identity above).
+    # Endpoint is the new OpenAI v1 surface exposed by the Foundry resource.
+    AZURE_OPENAI_ENDPOINT    = "https://${var.foundry_resource_name}.services.ai.azure.com/openai/v1"
+    AZURE_OPENAI_DEPLOYMENT  = var.gpt_deployment_name
+    AZURE_OPENAI_API_VERSION = var.gpt_api_version
   }
 
   lifecycle {
@@ -110,3 +122,20 @@ resource "azurerm_linux_function_app" "this" {
     ]
   }
 }
+
+# ===========================================================================
+# Azure OpenAI (Foundry) — portal-created resource referenced as data source.
+# Grant the Function App's managed identity the role needed to call inference
+# (keyless). The Foundry resource is an AIServices Cognitive account.
+# ===========================================================================
+data "azurerm_cognitive_account" "foundry" {
+  name                = var.foundry_resource_name
+  resource_group_name = var.foundry_resource_group
+}
+
+resource "azurerm_role_assignment" "func_openai_user" {
+  scope                = data.azurerm_cognitive_account.foundry.id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = azurerm_linux_function_app.this.identity[0].principal_id
+}
+
