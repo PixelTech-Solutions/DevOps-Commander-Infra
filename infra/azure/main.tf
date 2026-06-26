@@ -136,6 +136,6 @@ data "azurerm_cognitive_account" "foundry" {
 resource "azurerm_role_assignment" "func_openai_user" {
   scope                = data.azurerm_cognitive_account.foundry.id
   role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = azurerm_linux_function_app.this.identity[0].principal_id
+  principal_id         = one(azurerm_linux_function_app.this.identity[*].principal_id)
 }
 
