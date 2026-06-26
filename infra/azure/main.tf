@@ -113,10 +113,16 @@ resource "azurerm_linux_function_app" "this" {
   }
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME       = "python"
-    AzureWebJobsFeatureFlags       = "EnableWorkerIndexing"
-    SCM_DO_BUILD_DURING_DEPLOYMENT = "true"
-    ENABLE_ORYX_BUILD              = "true"
+    FUNCTIONS_WORKER_RUNTIME = "python"
+    AzureWebJobsFeatureFlags = "EnableWorkerIndexing"
+
+    # The deploy workflow vendors dependencies into .python_packages on the
+    # ubuntu runner (correct Linux wheels) and ships a complete package, so the
+    # platform must NOT try to build. Server-side Oryx build on Linux
+    # Consumption set run-from-package to an un-built zip, which left the worker
+    # unable to import azure.functions (0 functions indexed -> 404).
+    SCM_DO_BUILD_DURING_DEPLOYMENT = "false"
+    ENABLE_ORYX_BUILD              = "false"
     ALERT_SHARED_SECRET            = random_password.alert_secret.result
 
     # Azure OpenAI (keyless — auth via the user-assigned identity above).
