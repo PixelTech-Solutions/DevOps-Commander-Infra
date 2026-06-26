@@ -15,8 +15,8 @@
 #
 # The indexes/indexers/data sources themselves are created by the seed script
 # over the Search REST API (the azurerm provider has no resources for them).
-# Foundry queries the index server-side via a project CONNECTION created once
-# in the portal (key-based) using the endpoint + admin key outputs.
+# Foundry queries the index server-side via a project CONNECTION created by
+# Terraform below (azapi_resource.search_connection, key-based).
 #
 # Free tier: $0, 3 indexes / 3 indexers / 3 data sources, 50 MB. We use 1 index
 # + 2 indexers + 2 data sources — comfortably inside the Free limits.
@@ -61,4 +61,46 @@ resource "azurerm_storage_container" "logs" {
   name                  = "knowledge-logs"
   storage_account_id    = azurerm_storage_account.knowledge.id
   container_access_type = "private"
+}
+
+# ---------------------------------------------------------------------------
+# Foundry project connection to the Search service (the "Azure AI Search"
+# knowledge tool fronts the index through this connection). Created in code so
+# the name is deterministic (`erp-knowledge`) and matches local.search_index_name
+# — no portal click required. Shape mirrors what the Foundry portal generates
+# for a CognitiveSearch connection. The admin key is passed via sensitive_body
+# so it is never read back into state diffs.
+# ---------------------------------------------------------------------------
+resource "azapi_resource" "search_connection" {
+  type      = "Microsoft.CognitiveServices/accounts/projects/connections@2025-04-01-preview"
+  name      = local.search_connection_name
+  parent_id = local.foundry_project_id
+
+  body = {
+    properties = {
+      category      = "CognitiveSearch"
+      target        = "https://${azurerm_search_service.incidents.name}.search.windows.net/"
+      authType      = "ApiKey"
+      isSharedToAll = true
+      metadata = {
+        ApiType              = "Azure"
+        ApiVersion           = "2024-05-01-preview"
+        DeploymentApiVersion = "2023-11-01"
+        ResourceId           = azurerm_search_service.incidents.id
+        displayName          = azurerm_search_service.incidents.name
+        type                 = "azure_ai_search"
+      }
+    }
+  }
+
+  # Secret kept out of normal body so it is not stored/diffed in plain state.
+  sensitive_body = {
+    properties = {
+      credentials = {
+        key = azurerm_search_service.incidents.primary_key
+      }
+    }
+  }
+
+  schema_validation_enabled = false
 }
