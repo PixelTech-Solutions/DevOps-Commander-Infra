@@ -15,8 +15,9 @@
 #
 # The indexes/indexers/data sources themselves are created by the seed script
 # over the Search REST API (the azurerm provider has no resources for them).
-# Foundry queries the index server-side via a project CONNECTION created once
-# in the portal (key-based) using the endpoint + admin key outputs.
+# Foundry queries the index server-side via the project CONNECTION it
+# auto-creates for the Search service (key-based); its name is wired through
+# var.search_connection_name.
 #
 # Free tier: $0, 3 indexes / 3 indexers / 3 data sources, 50 MB. We use 1 index
 # + 2 indexers + 2 data sources — comfortably inside the Free limits.

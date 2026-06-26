@@ -36,18 +36,18 @@ output "function_app_principal_id" {
 }
 
 # ---------------------------------------------------------------------------
-# Azure AI Search (RAG, Step 8). Use these to create the Foundry project
-# connection ONCE in the portal: Management center > Connected resources >
-# New connection > Azure AI Search > Enter manually > API key. The connection
-# NAME must be exactly `search_connection_name` below.
+# Azure AI Search (RAG, Step 8). The Foundry project connection is the one
+# Foundry auto-creates for the Search service (var.search_connection_name) —
+# no manual connection needed. These outputs feed the seed script, which
+# pushes records and creates the blob indexers over the Search REST API.
 # ---------------------------------------------------------------------------
 output "search_endpoint" {
-  description = "Azure AI Search endpoint — paste into the Foundry connection."
+  description = "Azure AI Search endpoint — used by the seed script."
   value       = "https://${azurerm_search_service.incidents.name}.search.windows.net"
 }
 
 output "search_admin_key" {
-  description = "Admin key for the Search service — paste into the Foundry connection (API key auth)."
+  description = "Admin key for the Search service — used by the seed script (API key auth)."
   value       = azurerm_search_service.incidents.primary_key
   sensitive   = true
 }
@@ -58,7 +58,7 @@ output "search_index_name" {
 }
 
 output "search_connection_name" {
-  description = "Name the Foundry project connection MUST use (must match the index name)."
+  description = "Foundry project connection that fronts the Search service (auto-created by Foundry)."
   value       = local.search_connection_name
 }
 

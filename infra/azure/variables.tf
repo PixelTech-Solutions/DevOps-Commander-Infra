@@ -51,6 +51,12 @@ variable "gpt_deployment_name" {
   default     = "gpt-4o"
 }
 
+variable "search_connection_name" {
+  type        = string
+  description = "Foundry project connection that fronts the Azure AI Search service. Foundry auto-creates this when the Search resource is provisioned and the name cannot be edited in the portal, so default to that generated name (override in tfvars if it differs)."
+  default     = "srchdevopscommanderpr349a5k"
+}
+
 variable "gpt_api_version" {
   type        = string
   description = "Azure OpenAI API version the Function will request"
