@@ -151,7 +151,7 @@ resource "azurerm_linux_function_app" "this" {
     MicrosoftAppType     = "UserAssignedMSI"
     MicrosoftAppId       = azurerm_user_assigned_identity.func.client_id
     MicrosoftAppTenantId = azurerm_user_assigned_identity.func.tenant_id
-    DIRECTLINE_SECRET    = azurerm_bot_channel_directline.this.site[0].key
+    DIRECTLINE_SECRET    = one([for s in azurerm_bot_channel_directline.this.site : s.key if s.name == "default"])
   }
 
   lifecycle {
