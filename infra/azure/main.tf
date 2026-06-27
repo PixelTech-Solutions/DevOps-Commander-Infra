@@ -143,6 +143,15 @@ resource "azurerm_linux_function_app" "this" {
     # Action executor (ChatOps): the subscription that holds the dev ERP VMs the
     # executor reaches via Run Command. The executor stays disabled without it.
     AZURE_SUBSCRIPTION_ID = data.azurerm_subscription.current.subscription_id
+
+    # Web Chat front end (Bot Framework). The bot authenticates as this same
+    # user-assigned identity (UserAssignedMSI) -- no app password. DIRECTLINE_SECRET
+    # is the Direct Line channel key the /api/directline-token route exchanges
+    # for short-lived, browser-safe tokens.
+    MicrosoftAppType     = "UserAssignedMSI"
+    MicrosoftAppId       = azurerm_user_assigned_identity.func.client_id
+    MicrosoftAppTenantId = azurerm_user_assigned_identity.func.tenant_id
+    DIRECTLINE_SECRET    = azurerm_bot_channel_directline.this.site[0].key
   }
 
   lifecycle {
