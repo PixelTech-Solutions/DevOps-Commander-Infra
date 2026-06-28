@@ -140,6 +140,15 @@ resource "azurerm_linux_function_app" "this" {
     AZURE_AI_SEARCH_INDEX         = local.search_index_name
     AZURE_AI_SEARCH_CONNECTION_ID = local.search_connection_id
 
+    # Live observability via OFFICIAL remote MCP servers (Datadog + Grafana).
+    # Non-secret config only: the agent fleet (prompt-agent runtime) attaches
+    # each MCP server when its URL and credentials are present. The API keys /
+    # service-account token are SECRETS, injected by the function deploy
+    # pipeline from GitHub Actions secrets (kept out of git and TF state); see
+    # the ignore_changes block below.
+    DATADOG_MCP_URL = var.datadog_mcp_url
+    GRAFANA_MCP_URL = var.grafana_mcp_url
+
     # Action executor (ChatOps): the subscription that holds the dev ERP VMs the
     # executor reaches via Run Command. The executor stays disabled without it.
     AZURE_SUBSCRIPTION_ID = data.azurerm_subscription.current.subscription_id
@@ -157,7 +166,12 @@ resource "azurerm_linux_function_app" "this" {
   lifecycle {
     ignore_changes = [
       # Don't reset app settings on every apply if the deploy workflow tweaked them
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"]
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+      # Secret MCP credentials are injected by the function deploy pipeline from
+      # GitHub Actions secrets, not Terraform — don't clobber them on apply.
+      app_settings["DD_API_KEY"],
+      app_settings["DD_APP_KEY"],
+      app_settings["GRAFANA_SERVICE_ACCOUNT_TOKEN"],
     ]
   }
 }

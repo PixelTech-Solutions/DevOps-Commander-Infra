@@ -23,6 +23,23 @@ variable "python_version" {
 }
 
 # ---------------------------------------------------------------------------
+# Live observability — official remote MCP servers (Datadog + Grafana). These
+# are the non-secret endpoint URLs only; the API keys / service-account token
+# are SECRETS set by the function deploy pipeline from GitHub Actions secrets.
+# ---------------------------------------------------------------------------
+variable "datadog_mcp_url" {
+  type        = string
+  description = "Datadog hosted MCP endpoint (US5). Empty disables the Datadog tool."
+  default     = "https://mcp.us5.datadoghq.com"
+}
+
+variable "grafana_mcp_url" {
+  type        = string
+  description = "Grafana Cloud hosted MCP endpoint, e.g. https://<stack>.grafana.net/api/mcp. Empty disables the Grafana tool."
+  default     = ""
+}
+
+# ---------------------------------------------------------------------------
 # Azure OpenAI (Foundry) — the project + GPT-4o deployment are created in the
 # Foundry portal (ai.azure.com). Terraform references the resulting AIServices
 # account to grant the Function App keyless access.
