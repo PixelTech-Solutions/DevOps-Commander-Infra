@@ -167,6 +167,15 @@ resource "azurerm_linux_function_app" "this" {
     MicrosoftAppId       = azurerm_user_assigned_identity.func.client_id
     MicrosoftAppTenantId = azurerm_user_assigned_identity.func.tenant_id
     DIRECTLINE_SECRET    = one([for s in azurerm_bot_channel_directline.this.site : s.key if s.name == "default"])
+
+    # Human visibility: when an alert fires the Function emails a human (ACS
+    # Email) and proactively messages the Teams bot. Approve/Reject links in the
+    # email point back at this base URL. The base URL is built from the known
+    # name (not a resource ref) to avoid a self-referential cycle.
+    ACS_CONNECTION_STRING = azurerm_communication_service.this.primary_connection_string
+    NOTIFY_FROM           = "DoNotReply@${azurerm_email_communication_service_domain.this.from_sender_domain}"
+    NOTIFY_TO_EMAILS      = var.notify_to_email
+    PUBLIC_BASE_URL       = "https://func-${local.name_prefix}-${random_string.suffix.result}.azurewebsites.net"
   }
 
   lifecycle {

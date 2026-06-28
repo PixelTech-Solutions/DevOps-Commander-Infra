@@ -18,6 +18,11 @@ output "alert_endpoint_url" {
   value       = "https://${azurerm_linux_function_app.this.default_hostname}/api/alert"
 }
 
+output "notify_sender_address" {
+  description = "From address used for alert notification emails (Azure-managed ACS domain)."
+  value       = "DoNotReply@${azurerm_email_communication_service_domain.this.from_sender_domain}"
+}
+
 output "application_insights_connection_string" {
   description = "App Insights connection string (already wired into the Function App)"
   value       = azurerm_application_insights.this.connection_string

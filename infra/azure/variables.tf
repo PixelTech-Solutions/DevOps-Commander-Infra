@@ -67,6 +67,22 @@ variable "grafana_mcp_connection" {
 }
 
 # ---------------------------------------------------------------------------
+# Human notifications — email (Azure Communication Services) for alert
+# visibility and out-of-band approval links.
+# ---------------------------------------------------------------------------
+variable "notify_to_email" {
+  type        = string
+  description = "Recipient address(es) for alert notification emails. Comma-separate multiple addresses."
+  default     = "piyumalm912@gmail.com"
+}
+
+variable "acs_data_location" {
+  type        = string
+  description = "Data residency location for Azure Communication Services (e.g. 'United States', 'Europe')."
+  default     = "United States"
+}
+
+# ---------------------------------------------------------------------------
 # Azure OpenAI (Foundry) — the project + GPT-4o deployment are created in the
 # Foundry portal (ai.azure.com). Terraform references the resulting AIServices
 # account to grant the Function App keyless access.
