@@ -23,9 +23,9 @@ variable "python_version" {
 }
 
 # ---------------------------------------------------------------------------
-# Live observability — official remote MCP servers (Datadog + Grafana). These
-# are the non-secret endpoint URLs only; the API keys / service-account token
-# are SECRETS set by the function deploy pipeline from GitHub Actions secrets.
+# Live observability — official remote MCP servers (Datadog + Grafana). The URLs
+# are non-secret endpoints; auth is supplied by Foundry "Custom keys" project
+# connections (referenced by name), so NO secret lives in TF, git, or state.
 # ---------------------------------------------------------------------------
 variable "datadog_mcp_url" {
   type        = string
@@ -37,6 +37,18 @@ variable "grafana_mcp_url" {
   type        = string
   description = "Grafana Cloud hosted MCP endpoint, e.g. https://<stack>.grafana.net/api/mcp. Empty disables the Grafana tool."
   default     = ""
+}
+
+variable "datadog_mcp_connection" {
+  type        = string
+  description = "Name of the Foundry 'Custom keys' connection holding the Datadog MCP headers (DD-API-KEY, DD-APPLICATION-KEY)."
+  default     = "datadog-mcp"
+}
+
+variable "grafana_mcp_connection" {
+  type        = string
+  description = "Name of the Foundry 'Custom keys' connection holding the Grafana MCP header (Authorization = Bearer <token>)."
+  default     = "grafana-mcp"
 }
 
 # ---------------------------------------------------------------------------
