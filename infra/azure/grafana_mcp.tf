@@ -7,13 +7,14 @@
 # can reach it over the internet immediately — no VM, ansible, Caddy, or
 # Let's Encrypt. It scales to zero when idle (~$0).
 #
-# Auth model (no secret stored here): the container holds only GRAFANA_URL.
-# mcp-grafana runs in streamable-http mode and authenticates to Grafana
-# per request using the `Authorization: Bearer <SA token>` header injected by
-# the Foundry "grafana-mcp" Custom-keys connection. So the public endpoint is
-# useless without a valid Grafana service-account token, and no secret ever
-# lands in git or Terraform state. `--disable-write` keeps it strictly
-# read-only.
+# Auth model (Model B): this `:latest` (devel) build does NOT honor a
+# per-request `Authorization` header, so the container authenticates to
+# Grafana using its own GRAFANA_SERVICE_ACCOUNT_TOKEN env var, fed from a
+# Container Apps secret. The real token value is set out-of-band via
+# `az containerapp secret set` (the reusable Terraform workflow can't forward
+# a TF_VAR for it), so Terraform keeps only a placeholder and ignores secret
+# drift — no real token ever lands in git or state. `--disable-write` keeps
+# the endpoint strictly read-only, so a fixed token is acceptable.
 # ===========================================================================
 resource "azurerm_container_app_environment" "mcp" {
   name                       = "cae-${local.name_prefix}"
@@ -56,7 +57,25 @@ resource "azurerm_container_app" "grafana_mcp" {
         name  = "GRAFANA_URL"
         value = var.grafana_url
       }
+
+      # Real token is injected out-of-band via `az containerapp secret set`;
+      # the secret value below is a placeholder and is ignored (see lifecycle).
+      env {
+        name        = "GRAFANA_SERVICE_ACCOUNT_TOKEN"
+        secret_name = "grafana-sa-token"
+      }
     }
+  }
+
+  # Placeholder secret — the real Grafana SA token is set via Azure CLI and
+  # preserved by ignore_changes so pipeline runs never overwrite it.
+  secret {
+    name  = "grafana-sa-token"
+    value = "set-via-az-containerapp-secret-set"
+  }
+
+  lifecycle {
+    ignore_changes = [secret]
   }
 
   ingress {
