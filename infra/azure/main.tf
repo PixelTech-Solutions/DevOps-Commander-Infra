@@ -146,8 +146,12 @@ resource "azurerm_linux_function_app" "this" {
     # key/value pairs as request headers, so NO secret ever lands in app
     # settings, git, or TF state. The agent fleet attaches each MCP server when
     # its URL and connection name are present.
+    #
+    # Datadog uses its hosted MCP endpoint. Grafana Cloud has none, so we point
+    # at the self-hosted mcp-grafana Container App provisioned in grafana_mcp.tf
+    # (reachable over the internet via ACA's managed HTTPS ingress).
     DATADOG_MCP_URL        = var.datadog_mcp_url
-    GRAFANA_MCP_URL        = var.grafana_mcp_url
+    GRAFANA_MCP_URL        = "https://${azurerm_container_app.grafana_mcp.ingress[0].fqdn}${var.grafana_mcp_path}"
     DATADOG_MCP_CONNECTION = var.datadog_mcp_connection
     GRAFANA_MCP_CONNECTION = var.grafana_mcp_connection
 

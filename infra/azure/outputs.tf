@@ -36,6 +36,20 @@ output "function_app_principal_id" {
 }
 
 # ---------------------------------------------------------------------------
+# Self-hosted Grafana MCP server (Azure Container Apps). The FQDN is public
+# HTTPS with a valid Microsoft cert; the agent points GRAFANA_MCP_URL here.
+# ---------------------------------------------------------------------------
+output "grafana_mcp_fqdn" {
+  description = "Public FQDN of the self-hosted mcp-grafana Container App."
+  value       = azurerm_container_app.grafana_mcp.ingress[0].fqdn
+}
+
+output "grafana_mcp_endpoint" {
+  description = "Full Grafana MCP endpoint URL the agent uses (GRAFANA_MCP_URL)."
+  value       = "https://${azurerm_container_app.grafana_mcp.ingress[0].fqdn}${var.grafana_mcp_path}"
+}
+
+# ---------------------------------------------------------------------------
 # Azure AI Search (RAG, Step 8). The Foundry project connection is the one
 # Foundry auto-creates for the Search service (var.search_connection_name) —
 # no manual connection needed. These outputs feed the seed script, which

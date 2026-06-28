@@ -33,10 +33,25 @@ variable "datadog_mcp_url" {
   default     = "https://mcp.us5.datadoghq.com/v1/mcp"
 }
 
-variable "grafana_mcp_url" {
+# Grafana Cloud has NO hosted MCP endpoint, so we self-host the official
+# `grafana/mcp-grafana` image on Container Apps (see grafana_mcp.tf). These
+# configure that container; the resulting public FQDN becomes GRAFANA_MCP_URL.
+variable "grafana_url" {
   type        = string
-  description = "Grafana Cloud hosted MCP endpoint, e.g. https://<stack>.grafana.net/api/mcp. Empty disables the Grafana tool."
-  default     = ""
+  description = "Base URL of the Grafana stack the MCP server queries, e.g. https://<stack>.grafana.net (non-secret). The SA token is supplied per-request by the Foundry 'grafana-mcp' connection header."
+  default     = "https://indigopastry1703.grafana.net"
+}
+
+variable "grafana_mcp_image" {
+  type        = string
+  description = "Container image for the self-hosted Grafana MCP server."
+  default     = "grafana/mcp-grafana:latest"
+}
+
+variable "grafana_mcp_path" {
+  type        = string
+  description = "Endpoint path the streamable-http MCP server serves on. Appended to the Container App FQDN to form GRAFANA_MCP_URL."
+  default     = "/mcp"
 }
 
 variable "datadog_mcp_connection" {
