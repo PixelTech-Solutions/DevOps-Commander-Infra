@@ -13,8 +13,7 @@
 # the Foundry "grafana-mcp" Custom-keys connection. So the public endpoint is
 # useless without a valid Grafana service-account token, and no secret ever
 # lands in git or Terraform state. `--disable-write` keeps it strictly
-# read-only. `--allowed-hosts '*'` is safe because ACA's ingress is a trusted
-# reverse proxy in front of the container.
+# read-only.
 # ===========================================================================
 resource "azurerm_container_app_environment" "mcp" {
   name                       = "cae-${local.name_prefix}"
@@ -41,16 +40,15 @@ resource "azurerm_container_app" "grafana_mcp" {
       cpu    = 0.25
       memory = "0.5Gi"
 
-      # The image entrypoint is the mcp-grafana binary (defaults to SSE on
-      # stdio). Switch to streamable-http bound on all interfaces and harden:
-      #  --allowed-hosts '*'  : accept ACA's proxied Host header (trusted proxy)
-      #  --allowed-origins '*': accept the Foundry server-side client
-      #  --disable-write      : strictly read-only (no Grafana mutations)
+      # The image entrypoint is the mcp-grafana binary (defaults to stdio).
+      # Switch to streamable-http and bind 0.0.0.0 so ACA's ingress can reach
+      # it (the default localhost:8000 only listens on loopback). The endpoint
+      # path defaults to /mcp. --disable-write keeps it strictly read-only.
+      # (This image build has no --allowed-hosts/--allowed-origins flags, so
+      # there is no DNS-rebinding host check to configure.)
       args = [
         "-t", "streamable-http",
         "--address", "0.0.0.0:8000",
-        "--allowed-hosts", "*",
-        "--allowed-origins", "*",
         "--disable-write",
       ]
 
