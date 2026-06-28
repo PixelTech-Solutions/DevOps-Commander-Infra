@@ -15,5 +15,5 @@ gpt_api_version        = "2024-10-21"
 # stack's MCP endpoint, e.g. https://yourstack.grafana.net/api/mcp (leave empty
 # to disable the Grafana tool). The API keys / service-account token are secrets
 # injected by the function deploy pipeline, never here.
-datadog_mcp_url = "https://mcp.us5.datadoghq.com"
+datadog_mcp_url = "https://mcp.us5.datadoghq.com/v1/mcp"
 grafana_mcp_url = "https://indigopastry1703.grafana.net/api/mcp"

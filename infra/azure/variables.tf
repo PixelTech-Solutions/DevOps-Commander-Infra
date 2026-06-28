@@ -29,8 +29,8 @@ variable "python_version" {
 # ---------------------------------------------------------------------------
 variable "datadog_mcp_url" {
   type        = string
-  description = "Datadog hosted MCP endpoint (US5). Empty disables the Datadog tool."
-  default     = "https://mcp.us5.datadoghq.com"
+  description = "Datadog hosted MCP endpoint (US5, /v1/mcp path). Empty disables the Datadog tool."
+  default     = "https://mcp.us5.datadoghq.com/v1/mcp"
 }
 
 variable "grafana_mcp_url" {
